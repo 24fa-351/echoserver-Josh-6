@@ -36,6 +36,17 @@ int main(int argc, char *argv[])
     server_address.sin_addr.s_addr = INADDR_ANY;
     server_address.sin_port = htons(port);
 
+    // Binding newly created socket to given IP and verification 
+    if ((bind(server_socket, (struct sockaddr*)&server_address, sizeof(server_address))) != 0) { 
+        printf("socket bind failed...\n"); 
+        close(server_socket);
+        exit(0); 
+    } 
+    else
+        printf("Socket successfully binded..\n"); 
+
+    
+
     return 0;
 }
 
