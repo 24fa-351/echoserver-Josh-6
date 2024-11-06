@@ -4,6 +4,27 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#define BUFFER_SIZE 1024
+#define USERS 5
+
+void *handle_client(void *socket_ptr) 
+{
+    int client = *(int *)socket_ptr;
+    free(socket_ptr);
+
+    char buffer[BUFFER_SIZE];
+    int bytes_read = read(client, buffer, sizeof(buffer));
+
+    while (bytes_read != -1 && bytes_read != 0) {
+        printf("Received: %s\n", buffer);
+        write(client, buffer, bytes_read);
+
+        bytes_read = read(client, buffer, sizeof(buffer));
+    }
+    printf("Client terminated\n");
+    return NULL;
+    //printf("Im a client!\n");
+}
 
 int main(int argc, char *argv[]) 
 {
@@ -16,14 +37,14 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Format: %s -p <port>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
-    
+
     port = atoi(argv[2]);
     
     // Create a TCP socket
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket < 0)
     {
-        perror("Socket creation failed..");
+        perror("Socket creation failed..\n");
         exit(EXIT_FAILURE);
     }
     else
@@ -33,6 +54,7 @@ int main(int argc, char *argv[])
     }
 
     // assign ip to port
+    memset(&server_address, '\0', sizeof(server_address));
     server_address.sin_family = AF_INET;
     server_address.sin_addr.s_addr = INADDR_ANY;
     server_address.sin_port = htons(port);
@@ -47,7 +69,7 @@ int main(int argc, char *argv[])
         printf("Socket successfully binded..\n"); }
 
     // Server is ready to listen and verification
-    if(listen(server_socket, 2) == -1)
+    if(listen(server_socket, USERS) == -1)
     {
         perror("listen failed..\n"); 
         close(server_socket);
@@ -56,6 +78,32 @@ int main(int argc, char *argv[])
     else{
         printf("Server listening..\n"); }
 
+    printf("Server listening on port %d\n", port);
+
+    while(1)
+    {
+        
+        // Accept client connection
+        client_socket = accept(server_socket, (struct sockaddr*)&client_address, &client_len);
+
+        if (client_socket == -1)
+        {
+            perror("Accept failed\n");
+            continue;
+        }
+        
+        printf("Client connected\n");
+
+        int *client_socket_ptr = malloc(sizeof(int));
+        *client_socket_ptr = client_socket;
+
+        pthread_t client_thread;
+        pthread_create(&client_thread, NULL, handle_client, client_socket_ptr);
+        pthread_detach(client_thread); 
+
+    }
+
+    close(server_socket);
     return 0;
 }
 
