@@ -16,13 +16,14 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Format: %s -p <port>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
+    
     port = atoi(argv[2]);
     
     // Create a TCP socket
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket < 0)
     {
-        fprintf(stderr, "Socket creation failed");
+        perror("Socket creation failed..");
         exit(EXIT_FAILURE);
     }
     else
@@ -38,14 +39,22 @@ int main(int argc, char *argv[])
 
     // Binding newly created socket to given IP and verification 
     if ((bind(server_socket, (struct sockaddr*)&server_address, sizeof(server_address))) != 0) { 
-        printf("socket bind failed...\n"); 
+        perror("socket bind failed..\n"); 
         close(server_socket);
-        exit(0); 
+        exit(EXIT_FAILURE); 
     } 
-    else
-        printf("Socket successfully binded..\n"); 
+    else {
+        printf("Socket successfully binded..\n"); }
 
-    
+    // Server is ready to listen and verification
+    if(listen(server_socket, 2) == -1)
+    {
+        perror("listen failed..\n"); 
+        close(server_socket);
+        exit(EXIT_FAILURE); 
+    } 
+    else{
+        printf("Server listening..\n"); }
 
     return 0;
 }
